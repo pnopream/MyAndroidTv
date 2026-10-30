@@ -21,8 +21,8 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses || true
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -85,19 +85,15 @@ jobs:
 
               <application
                   android:theme="@android:style/Theme.Material.Light.NoActionBar"
-                  android:label="MyAndroidTV"
-                  android:usesCleartextTraffic="true">
-
+                  android:label="MyAndroidTV">
                   <activity
                       android:name=".MainActivity"
-                      android:screenOrientation="landscape"
-                      android:exported="true">
-
+                      android:exported="true"
+                      android:screenOrientation="landscape">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
-
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
@@ -114,32 +110,17 @@ jobs:
           import android.os.Bundle;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
-          import android.view.View;
 
           public class MainActivity extends Activity {
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-
-                  getWindow().getDecorView().setSystemUiVisibility(
-                      View.SYSTEM_UI_FLAG_FULLSCREEN |
-                      View.SYSTEM_UI_FLAG_HIDE_NAVIGATION |
-                      View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY |
-                      View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                  );
-
                   WebView webView = new WebView(this);
                   webView.getSettings().setJavaScriptEnabled(true);
                   webView.getSettings().setDomStorageEnabled(true);
                   webView.setWebViewClient(new WebViewClient());
                   setContentView(webView);
                   webView.loadUrl("file:///android_asset/www/index.html");
-              }
-
-              @Override
-              public void onBackPressed() {
-                  setContentView(new WebView(this));
-                  super.onBackPressed();
               }
           }
           EOF
@@ -153,7 +134,7 @@ jobs:
             unzip -oq "$ZIP" -d source
           fi
 
-          HTML=$(find . -type f -name index.html \
+          HTML=$(find source . -type f -name index.html \
             -not -path './app/*' \
             -not -path './.git/*' | head -n 1)
 
@@ -163,11 +144,6 @@ jobs:
           fi
 
           cp -R "$(dirname "$HTML")"/. app/src/main/assets/www/
-
-          if [ ! -f app/src/main/assets/www/index.html ]; then
-            echo "ERROR: Khong co index.html trong assets"
-            exit 1
-          fi
 
       - name: Build APK
         run: gradle --no-daemon assembleDebug
