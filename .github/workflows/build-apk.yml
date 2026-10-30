@@ -31,7 +31,8 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Build APK
+            - name: Build APK
+        working-directory: project
         run: gradle --no-daemon assembleDebug
 
       - name: Upload APK
