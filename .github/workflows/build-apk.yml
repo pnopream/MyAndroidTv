@@ -12,38 +12,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Check ZIP file
-        run: |
-          ls -lah
-          test -f MyAndroidTV.zip || {
-            echo "ERROR: Khong tim thay MyAndroidTV.zip"
-            exit 1
-          }
-
       - name: Extract Android project
         run: |
-          mkdir -p project
-          unzip -q MyAndroidTV.zip -d project
+          unzip -q MyAndroidTV_GitHub_Project.zip -d project
 
       - name: Find Gradle project
         run: |
           SETTINGS=$(find project -type f \( -name settings.gradle -o -name settings.gradle.kts \) | head -n 1)
-
           if [ -z "$SETTINGS" ]; then
-            echo "ERROR: Khong tim thay settings.gradle trong ZIP"
-            find project -maxdepth 4 -type f | head -n 100
+            echo "ERROR: Khong tim thay settings.gradle"
+            find project -maxdepth 5 -type f | head -n 100
             exit 1
           fi
-
           PROJECT_DIR=$(dirname "$SETTINGS")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
           echo "Android project: $PROJECT_DIR"
@@ -57,21 +46,9 @@ jobs:
         run: gradle --no-daemon assembleDebug
         working-directory: ${{ env.PROJECT_DIR }}
 
-      - name: Find APK
-        run: |
-          APK=$(find "$PROJECT_DIR" -type f -path "*/build/outputs/apk/debug/*.apk" | head -n 1)
-
-          if [ -z "$APK" ]; then
-            echo "ERROR: Khong tim thay file APK"
-            exit 1
-          fi
-
-          echo "APK_PATH=$APK" >> "$GITHUB_ENV"
-          echo "Found APK: $APK"
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MyAndroidTV-APK
-          path: ${{ env.APK_PATH }}
+          path: project/**/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
