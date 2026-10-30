@@ -24,21 +24,28 @@ jobs:
       - name: Extract Android project
         run: |
           unzip -q MyAndroidTV.zip -d project
-          cp -a project/. .
+
+      - name: Find Android project
+        run: |
+          SETTINGS=$(find project -name settings.gradle -o -name settings.gradle.kts | head -n 1)
+          if [ -z "$SETTINGS" ]; then
+            echo "Khong tim thay settings.gradle trong ZIP"
+            exit 1
+          fi
+          echo "PROJECT_DIR=$(dirname "$SETTINGS")" >> "$GITHUB_ENV"
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-            - name: Build APK
-        working-directory: project
+      - name: Build APK
         run: gradle --no-daemon assembleDebug
+        working-directory: project
 
-      
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MyAndroidTV-APK
-          path: project/app/build/outputs/apk/debug/app-debug.apk
-
+          path: project/**/app/build/outputs/apk/debug/app-debug.apk
+          
